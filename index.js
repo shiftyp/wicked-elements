@@ -193,11 +193,7 @@ self.wickedElements = (function (exports) {
       m.set(value, 0);
       if (!wicked.has(value)) wicked.set(value, []);
       wicked.get(value).push(handler);
-
-      for (var i = 0, length = l.length; i < length; i++) {
-        value.addEventListener(l[i].t, handler, l[i].o);
-      }
-
+      handleEvents(value, 'add', l, handler);
       if (handler.init) handler.init();
       asCustomElement$1(value, o);
     }
@@ -214,6 +210,12 @@ self.wickedElements = (function (exports) {
         if (method === h[i][key] && (notAC || -1 < (h[i].observedAttributes || []).indexOf(name))) method.apply(h[i], arguments);
       }
     };
+  };
+
+  var handleEvents = function handleEvents(e, p, l, h) {
+    for (var m = p + 'EventListener', i = 0, length = l.length; i < length; i++) {
+      e[m](l[i].t, h, l[i].o);
+    }
   };
 
   var define = function define(selector, definition) {
@@ -253,6 +255,16 @@ self.wickedElements = (function (exports) {
         this[retype[event.type]](event);
       };
     }
+
+    definition.release = function () {
+      var handlers = wicked.get(this.element);
+      var i = handlers.indexOf(this);
+
+      if (-1 < i) {
+        handleEvents(this.element, 'remove', listeners, handlers[i]);
+        handlers.splice(i, 1);
+      }
+    };
 
     query.push(selector);
     config.push({

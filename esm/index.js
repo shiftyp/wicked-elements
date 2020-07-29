@@ -23,8 +23,7 @@ const {
       if (!wicked.has(value))
         wicked.set(value, []);
       wicked.get(value).push(handler);
-      for (let i = 0, {length} = l; i < length; i++)
-        value.addEventListener(l[i].t, handler, l[i].o);
+      handleEvents(value, 'add', l, handler);
       if (handler.init)
         handler.init();
       asCustomElement(value, o);
@@ -41,6 +40,11 @@ const delegate = (key, method, notAC) => function (name) {
     )
       method.apply(h[i], arguments);
   }
+};
+
+const handleEvents = (e, p, l, h) => {
+  for (let m = p + 'EventListener', i = 0, {length} = l; i < length; i++)
+    e[m](l[i].t, h, l[i].o);
 };
 
 export const define = (selector, definition) => {
@@ -75,6 +79,14 @@ export const define = (selector, definition) => {
       this[retype[event.type]](event);
     };
   }
+  definition.release = function () {
+    const handlers = wicked.get(this.element);
+    const i = handlers.indexOf(this);
+    if (-1 < i) {
+      handleEvents(this.element, 'remove', listeners, handlers[i]);
+      handlers.splice(i, 1);
+    }
+  };
   query.push(selector);
   config.push({m: new WeakMap, l: listeners, o: definition});
   setupList(document.querySelectorAll(selector), new Set);
